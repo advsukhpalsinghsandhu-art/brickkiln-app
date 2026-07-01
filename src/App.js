@@ -249,21 +249,7 @@ export default function BrickKilnTracker() {
 
           </div>
 
-          <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-xs font-bold text-blue-800 mb-3">📝 Demo Credentials:</p>
-            <div className="space-y-2 text-xs">
-              <div>
-                <p className="font-bold text-blue-900">👨‍💼 Employer:</p>
-                <p className="text-blue-700">Username: <span className="font-mono">employer</span></p>
-                <p className="text-blue-700">Password: <span className="font-mono">employer123</span></p>
-              </div>
-              <div className="pt-2 border-t border-blue-200">
-                <p className="font-bold text-blue-900">📊 Muneem:</p>
-                <p className="text-blue-700">Username: <span className="font-mono">muneem</span></p>
-                <p className="text-blue-700">Password: <span className="font-mono">muneem123</span></p>
-              </div>
-            </div>
-          </div>
+
         </div>
       </div>
     );
