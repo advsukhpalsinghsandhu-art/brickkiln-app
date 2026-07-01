@@ -246,6 +246,7 @@ export default function BrickKilnTracker() {
             {loginError && <div className="p-3 bg-red-50 border border-red-200 rounded-lg"><p className="text-sm text-red-600">{loginError}</p></div>}
 
             <button onClick={handleLogin} className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-3 rounded-lg hover:from-orange-600 hover:to-red-600">Login</button>
+
           </div>
 
           <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
