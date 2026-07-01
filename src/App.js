@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Plus, Package, AlertCircle } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 // ⚠️ Replace these with your own Supabase project values (Settings → API)
@@ -55,7 +55,7 @@ export default function BrickKilnTracker() {
     soldQuantity: '', salePrice: ''
   });
   const [inventoryAdjustForm, setInventoryAdjustForm] = useState({ brickType: 'Awwal', stackNumber: '', quantity: '' });
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loadError, setLoadError] = useState('');
 
   // Load data once logged in, then keep it live-synced via Supabase Realtime
