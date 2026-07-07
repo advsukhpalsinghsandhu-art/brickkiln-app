@@ -4,6 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 import MastersModule from './MastersModule';
 import ProductionModule from './ProductionModule';
 import TransactionModule from './TransactionModule';
+import FinancialModule from './FinancialModule';
+import InitialSettingsModule from './InitialSettingsModule';
+import ReportsModule from './ReportsModule';
+import AdminModule from './AdminModule';
 
 // ⚠️ Replace these with your own Supabase project values (Settings → API)
 const SUPABASE_URL = 'https://gvmzgkhlgwrmwazbxhzh.supabase.co';
@@ -47,7 +51,7 @@ export default function BrickKilnTracker() {
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeSubTabs, setActiveSubTabs] = useState({});
-  const [expandedGroups, setExpandedGroups] = useState({ production: true, transaction: true, masters: true });
+  const [expandedGroups, setExpandedGroups] = useState({ admin: true, production: true, transaction: true, masters: true, financial: true, initialSettings: true });
   const [records, setRecords] = useState([]);
   const [inventory, setInventory] = useState({});
   const [items, setItems] = useState([]);
@@ -243,11 +247,24 @@ export default function BrickKilnTracker() {
         ['creditVehicle', '🚚 Credit Vehicle Work'], ['orders', '🧾 Orders'],
         ['absentVoucher', '🙅 Absent Voucher'], ['miscSale', '🧺 Misc Sale'],
       ] },
+    { key: 'financial', type: 'group', label: '💰 Financial Accounts', children: [
+        ['payment', '💵 Payment'], ['receipt', '🧾 Receipt'], ['voucher', '📑 Account Voucher'],
+      ] },
     ...(userRole === 'employer' ? [
+      { key: 'admin', type: 'group', label: '🛡️ Admin', children: [
+          ['roleMaster', '🎭 Role Master'], ['salarySetup', '💵 Salary Setup'], ['postSalary', '📤 Post Salary'],
+          ['userManagement', '👥 User Management'], ['manageBranch', '🏢 Manage Branch'], ['sessionSetup', '🗓️ Session Setup'],
+          ['advanceSetting', '⚙️ Advance Setting'], ['adminReports', '📊 Admin Reports'], ['applyNewRates', '💹 Apply New Rates'],
+          ['updateOpeningBalance', '📦 Update Opening Balance'], ['setActiveInactive', '🔘 Set Active Inactive'],
+        ] },
       { key: 'masters', type: 'group', label: '📋 Masters', children: [
           ['item', 'Item'], ['chakka', 'Chakka'], ['city', 'City'], ['freight', 'Freight'],
           ['vehicle', 'Vehicle'], ['lineChamber', 'Line/Chamber'], ['location', 'Location'],
           ['ledger', 'Ledger'], ['gst', 'GST Tax'], ['saleAgent', 'Sale Agent'],
+        ] },
+      { key: 'initialSettings', type: 'group', label: '⚙️ Initial Settings', children: [
+          ['labourRates', '👷 Labour Rates'], ['katSetup', '⚙️ Kat Setup'], ['commissionSetup', '💼 Commission Setup'],
+          ['itemsOpening', '📦 Items Opening'], ['ledgersOpening', '📒 Ledgers Opening'],
         ] },
       { key: 'reports', type: 'leaf', label: '📊 Reports' },
     ] : []),
@@ -386,25 +403,28 @@ export default function BrickKilnTracker() {
             <TransactionModule supabase={supabase} userRole={userRole} subTab={activeSubTabs.transaction} onSubTabChange={(k) => setActiveSubTabs((p) => ({ ...p, transaction: k }))} />
           )}
 
+          {activeTab === 'financial' && (
+            <FinancialModule supabase={supabase} userRole={userRole} subTab={activeSubTabs.financial} onSubTabChange={(k) => setActiveSubTabs((p) => ({ ...p, financial: k }))} />
+          )}
+
           {activeTab === 'production' && (
             <ProductionModule supabase={supabase} userRole={userRole} subTab={activeSubTabs.production} onSubTabChange={(k) => setActiveSubTabs((p) => ({ ...p, production: k }))} />
+          )}
+
+          {activeTab === 'admin' && userRole === 'employer' && (
+            <AdminModule supabase={supabase} userRole={userRole} subTab={activeSubTabs.admin} onSubTabChange={(k) => setActiveSubTabs((p) => ({ ...p, admin: k }))} />
           )}
 
           {activeTab === 'masters' && userRole === 'employer' && (
             <MastersModule supabase={supabase} subTab={activeSubTabs.masters} onSubTabChange={(k) => setActiveSubTabs((p) => ({ ...p, masters: k }))} />
           )}
 
+          {activeTab === 'initialSettings' && userRole === 'employer' && (
+            <InitialSettingsModule supabase={supabase} userRole={userRole} subTab={activeSubTabs.initialSettings} onSubTabChange={(k) => setActiveSubTabs((p) => ({ ...p, initialSettings: k }))} />
+          )}
+
           {activeTab === 'reports' && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold mb-6">Reports</h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div><h3 className="text-lg font-bold mb-4">Nikashi</h3>{items.map(it => {
-                  const total = allNikashi.filter(r => r.itemId === it.id).reduce((s, r) => s + r.quantity, 0);
-                  return <div key={it.id} className="flex justify-between p-2 bg-gray-50 rounded"><span>{it.item_name}</span><span className="font-bold text-red-800">{total}</span></div>;
-                })}</div>
-                {allSales.length > 0 && <div><h3 className="text-lg font-bold mb-4">Sales</h3><div className="space-y-3"><div className="p-3 bg-blue-50 rounded"><p className="text-xs">Sold</p><p className="text-3xl font-bold text-blue-600">{allSales.reduce((s, r) => s + r.soldQuantity, 0)}</p></div></div></div>}
-              </div>
-            </div>
+            <ReportsModule supabase={supabase} />
           )}
         </div>
       </div>
