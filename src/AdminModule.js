@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Trash2, Power } from 'lucide-react';
+import { Trash2, Power, KeyRound } from 'lucide-react';
+import { createCredentials } from './authUtils';
 
 // ---------- shared little bits ----------
 
@@ -287,8 +288,9 @@ function PostSalary({ supabase, userRole }) {
 function UserManagement({ supabase }) {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
-  const [form, setForm] = useState({ username: '', roleId: '' });
+  const [form, setForm] = useState({ username: '', roleId: '', password: '' });
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     const { data: r } = await supabase.from('roles').select('*').order('id');
@@ -300,11 +302,40 @@ function UserManagement({ supabase }) {
   useEffect(() => { load(); }, [load]);
 
   const add = async () => {
-    if (!form.username) return;
-    const { error: err } = await supabase.from('app_users').insert({ username: form.username, role_id: form.roleId || null, is_active: true });
+    setError('');
+    if (!form.username || !form.password) {
+      setError('Username and password are required.');
+      return;
+    }
+    if (form.password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    setSaving(true);
+    const { salt, passwordHash } = await createCredentials(form.password);
+    const { error: err } = await supabase.from('app_users').insert({
+      username: form.username,
+      role_id: form.roleId || null,
+      password_hash: passwordHash,
+      password_salt: salt,
+      is_active: true,
+    });
+    setSaving(false);
     if (err) { setError(err.message); return; }
-    setForm({ username: '', roleId: '' });
+    setForm({ username: '', roleId: '', password: '' });
     load();
+  };
+
+  const resetPassword = async (u) => {
+    const newPassword = window.prompt(`New password for "${u.username}" (min 6 characters):`);
+    if (!newPassword) return;
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    const { salt, passwordHash } = await createCredentials(newPassword);
+    const { error: err } = await supabase.from('app_users').update({ password_hash: passwordHash, password_salt: salt }).eq('id', u.id);
+    if (err) setError(err.message); else { setError(''); load(); }
   };
 
   const toggleActive = async (u) => {
@@ -324,14 +355,17 @@ function UserManagement({ supabase }) {
           <Field label="Username">
             <input className={inputCls} value={form.username} onChange={e => setForm(p => ({ ...p, username: e.target.value }))} />
           </Field>
+          <Field label="Password">
+            <input type="password" className={inputCls} value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} placeholder="Min 6 characters" />
+          </Field>
           <Field label="Role">
             <select className={inputCls} value={form.roleId} onChange={e => setForm(p => ({ ...p, roleId: e.target.value }))}>
               <option value="">Select role</option>
               {roles.map(r => <option key={r.id} value={r.id}>{r.role_name}</option>)}
             </select>
           </Field>
-          <p className="text-xs text-gray-500">Note: this manages user/role records only. Login credentials for the app are still configured separately.</p>
-          <button onClick={add} className={`w-full ${primaryBtn}`}>Add User</button>
+          <p className="text-xs text-gray-500">Accounts with a role named "Employer" or "Admin" get full access. Any other role gets restricted (Muneem-level) access. This is on top of the built-in employer/muneem logins, which still work.</p>
+          <button onClick={add} disabled={saving} className={`w-full ${primaryBtn}`}>{saving ? 'Saving...' : 'Add User'}</button>
         </div>
       </Card>
 
@@ -339,7 +373,7 @@ function UserManagement({ supabase }) {
         <ErrorBanner message={error} />
         {users.length === 0 ? <p className="text-gray-400">No records</p> : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50"><tr><th className="px-3 py-2 text-left">Username</th><th className="px-3 py-2 text-left">Role</th><th className="px-3 py-2 text-left">Status</th><th className="px-3 py-2">Toggle</th><th className="px-3 py-2">Del</th></tr></thead>
+            <thead className="bg-gray-50"><tr><th className="px-3 py-2 text-left">Username</th><th className="px-3 py-2 text-left">Role</th><th className="px-3 py-2 text-left">Status</th><th className="px-3 py-2">Reset PW</th><th className="px-3 py-2">Toggle</th><th className="px-3 py-2">Del</th></tr></thead>
             <tbody>
               {users.map(u => (
                 <tr key={u.id} className="border-b">
@@ -350,6 +384,7 @@ function UserManagement({ supabase }) {
                       {u.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
+                  <td className="px-3 py-2 text-center"><button onClick={() => resetPassword(u)} className="text-gray-600" title="Reset password"><KeyRound size={16} /></button></td>
                   <td className="px-3 py-2 text-center"><button onClick={() => toggleActive(u)} className="text-blue-600"><Power size={16} /></button></td>
                   <td className="px-3 py-2 text-center"><button onClick={() => remove(u.id)} className="text-red-500"><Trash2 size={16} /></button></td>
                 </tr>
